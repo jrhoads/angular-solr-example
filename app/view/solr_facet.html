@@ -1,1 +1,6 @@
-<h1>{{display}}: {{field}}</h1>
+<h3>{{display}}: {{field}}</h3>
+<ul>
+  <li ng-repeat="(k, v)  in results">
+    <solr-facet-result field="{{field}}" key="{{k}}" count="{{v}}" ></solr-facet-result>
+  </li>
+</ul>

@@ -8,14 +8,32 @@
   </head>
   <body>
     <div ng-app="firstApp">
-      <solr>
-        <solr-search></solr-search>
-        <solr-facet-list>
-          <solr-facet display="Subject" field="mods_subject_ssim"></solr-facet>
-          <solr-facet display="Keyword" field="mods_subject_ssim"></solr-facet>
-        </solr-facet-list>
+      <div class="container">
+      <solr docs="docs" solr-url="'https://repository.library.brown.edu/api/search/'">
+        
+        <div class="row">
+          <div class="col-md-8">
+            <solr-search></solr-search>
+
+            <h2>Results</h2>
+            <ul>
+              <li ng-repeat="doc in docs">{{doc.primary_title}}</li>
+            </ul>
+            
+          </div>
+          <div class="col-md-4">
+            <solr-facet-group>
+              <!--<solr-facet display="Subject" field="mods_subject_ssim"></solr-facet>-->
+              <!--<solr-facet display="Keyword" field="mods_subject_ssim" results="[]"></solr-facet>-->
+              <solr-facet display="Type" field="object_type" results=""></solr-facet>
+            </solr-facet-group>
+          </div>
+          
+        </div>
       </solr>
+      </div>
     </div>
+    <script src="app/js/solr.js" type="text/javascript" charset="utf-8"></script>
     <script src="app/js/main.js" type="text/javascript" charset="utf-8"></script>
   </body>
 </html>
