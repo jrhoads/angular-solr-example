@@ -33,15 +33,15 @@ var solr = angular.module("solr", [])
       require:["^solr", "solrFacetGroup"],
       link: function(scope, element, attrs, ctrls){
         var solrCtrl=ctrls[0];
-        var facetListCtrl= ctrls[1];
+        var facetGroupCtrl= ctrls[1];
 
-        solrCtrl.setFacetList(scope);
+        solrCtrl.setFacetGroup(scope);
         scope.$watch(function(){ return solrCtrl.facet_fields;},
                      function ( newVal, oldVal){
                         if ( newVal !== oldVal ) {
-                         for (var k in facetListCtrl.getFacets()){
+                         for (var k in facetGroupCtrl.getFacets()){
                            console.log(k);
-                           facetListCtrl.setFacetResult(k, solrCtrl.facet_fields[k]);
+                           facetGroupCtrl.setFacetResult(k, solrCtrl.facet_fields[k]);
                          }
                          console.log( "Solr has changed");
                          console.log(newVal);
@@ -54,8 +54,23 @@ var solr = angular.module("solr", [])
 
   .directive("solrSearch", function() {
     return {
+      scope:{
+        preload:"="
+      },
       restrict: "E",
       templateUrl:"app/view/solr_search.html",
+      require: "^solr",
+      link: function( scope, element, attrs, ctrl){
+        scope.search = ctrl.search;
+        scope.roptions= ["3", "10", "20", "30"];
+        //ctrl.roptions = scope.roptions;
+        scope.rows="10";
+        scope.query="";
+        if (scope.preload){
+          scope.search(scope.query, scope.rows);
+        }
+      }
+
     }
   })
 
@@ -92,32 +107,63 @@ var solr = angular.module("solr", [])
     }
   })
 
-  .directive('solr', function ($timeout) {
+  .directive("solr", function ($timeout) {
     return {
       scope: {
         solrUrl: '=',
         docs: '=',
+        preload: '=',
       },
       restrict: 'E',
-      controller: function($scope, $http) {
+      controller: function($scope, $http, $timeout) {
         var that = this;
         that.facet_fields={};
-        that.searchUrl = function(){
-          return 'https://repository.library.brown.edu/api/pub/search/?q=*&facet=on&facet.field=object_type&rows=3&json.nl=map&facet.mincount=1&callback=JSON_CALLBACK';
+        that.buildSearchUrl = function(query, rows){
+          //return 'https://repository.library.brown.edu/api/pub/search/'
+          if (!query){
+            query="*";
+          }
+          if (!rows){
+            rows="3";
+          }
+          return that.solrUrl
+          +'?q='+ query
+          +'&facet=on'
+          +'&facet.mincount=1'
+          +'&json.nl=map'
+          //+'&facet.field=object_type'
+          +'&'+ this.getFacetQueryParams()
+          +'&rows='+rows
+          +'&callback=JSON_CALLBACK';
         };
 
-        //$http.get('app/data3.json').success(function(data) {
-        //$http.jsonp('https://repository.library.brown.edu/api/pub/search/?q=*&facet=on&facet.field=object_type&rows=3&json.nl=map&facet.mincount=1&callback=JSON_CALLBACK')
-        $http.jsonp(that.searchUrl())
-          .success(function(data) {
-            that.facet_fields = data.facet_counts.facet_fields;
-            $scope.docs = data.response.docs;
-        });
+        that.search = function(query, rows){
+          console.log(that.buildSearchUrl(query, rows));
+          $http.jsonp(that.buildSearchUrl(query, rows))
+            .success(function(data) {
+              that.facet_fields = data.facet_counts.facet_fields;
+              $scope.docs = data.response.docs;
+          });
+        };
+        $scope.search = that.search;
 
-        this.setFacetList = function(newList){
-          $scope.facet_list = newList;
+        this.setFacetGroup = function(newGroup){
+          $scope.facet_group = newGroup;
+        };
+
+        this.getFacetQueryParams = function(){
+          if ($scope.facet_group){
+            fields = $scope.facet_group.listFields();
+            field_string = fields.join("&facet.field=");
+            //return 'facet.field=object_type';
+            return 'facet.field='+ field_string;
+          }
+          //return "";
         };
       },
       require:"solr",
+      link: function( scope, element, attrs, ctrl){
+        ctrl.solrUrl = scope.solrUrl;
+      }
     };
 });
