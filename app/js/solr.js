@@ -55,7 +55,8 @@ var solr = angular.module("solr", [])
   .directive("solrSearch", function() {
     return {
       scope:{
-        preload:"="
+        //preload:"=",
+        //query:"="
       },
       restrict: "E",
       templateUrl:"app/view/solr_search.html",
@@ -65,7 +66,9 @@ var solr = angular.module("solr", [])
         scope.roptions= ["3", "10", "20", "30"];
         //ctrl.roptions = scope.roptions;
         scope.rows="10";
-        scope.query="";
+        scope.preload=attrs.preload;
+        scope.query=attrs.query;
+        console.log("Query =" + scope.query);
         if (scope.preload){
           scope.search(scope.query, scope.rows);
         }
@@ -139,7 +142,7 @@ var solr = angular.module("solr", [])
 
         that.search = function(query, rows){
           console.log(that.buildSearchUrl(query, rows));
-          $http.jsonp(that.buildSearchUrl(query, rows))
+          $http.jsonp(that.buildSearchUrl(query, rows), {cache:true})
             .success(function(data) {
               that.facet_fields = data.facet_counts.facet_fields;
               $scope.docs = data.response.docs;

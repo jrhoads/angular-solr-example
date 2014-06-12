@@ -4,41 +4,40 @@
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <title>Playing With Solr Directives</title>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.0-beta.10/angular.js" type="text/javascript" charset="utf-8"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.0-beta.10/angular-route.js" type="text/javascript" charset="utf-8"></script>
     <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" type="text/css" media="all" />
   </head>
   <body>
-    <div ng-app="firstApp">
+    <div ng-app="firstApp" ng-controller="MainCtrl">
       <div class="container">
-      <h1>Playing With Solr Directives</h1>
-      <solr docs="docs" solr-url="'https://repository.library.brown.edu/api/search/'">
+        <h1>Playing With Solr Directives</h1>
+        <solr docs="docs" solr-url="'https://repository.library.brown.edu/api/search/'">
+          <div class="row">
+            <div class="col-md-4">
+              <solr-facet-group>
+                <solr-facet display="Object Type"   field="object_type"></solr-facet>
+                <solr-facet display="Resource Type" field="mods_type_of_resource"></solr-facet>
+                <solr-facet display="Keyword"       field="mods_subject_ssim"></solr-facet>
+              </solr-facet-group>
+            </div>
 
-        <div class="row">
-          <div class="col-md-4">
-            <solr-facet-group>
-              <solr-facet display="Resource Type" field="mods_type_of_resource"></solr-facet>
-              <solr-facet display="Keyword" field="mods_subject_ssim" results="[]"></solr-facet>
-              <solr-facet display="Type" field="object_type" results=""></solr-facet>
-            </solr-facet-group>
+            <div class="col-md-8">
+              <solr-search preload='true' query='{{params.q}}'></solr-search>
+              <h2>Results</h2>
+              <ul>
+                <li ng-repeat="doc in docs">
+                  <hr/>
+                  <h5>
+                    <a ng-href="//repository.library.brown.edu/studio/item/{{doc.pid}}/">
+                      {{doc.primary_title}}
+                    </a>
+                  </h5>
+                </li>
+                <!--<li ng-repeat="doc in docs">{{doc | json}}</li>-->
+              </ul>
+            </div>
           </div>
-
-          <div class="col-md-8">
-            <solr-search preload='true'></solr-search>
-            <h2>Results</h2>
-            <ul>
-              <li ng-repeat="doc in docs">
-                <hr />
-                <h5>
-                  <a ng-href="//repository.library.brown.edu/studio/item/{{doc.pid}}/">
-                    {{doc.primary_title}}
-                  </a>
-                </h5>
-              </li>
-              <!--<li ng-repeat="doc in docs">{{doc | json}}</li>-->
-            </ul>
-
-          </div>
-        </div>
-      </solr>
+        </solr>
       </div>
     </div>
     <script src="app/js/solr.js" type="text/javascript" charset="utf-8"></script>
