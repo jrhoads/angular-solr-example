@@ -11,7 +11,6 @@ var solr = angular.module("solr", [])
       for (var k in $scope.facets){
         fields.push($scope.facets[k].field);
       }
-      console.log(fields.join(','));
       return fields;
     };
     this.setFacetResult = function( facet_key, facet_results){
@@ -36,39 +35,41 @@ var solr = angular.module("solr", [])
         var facetGroupCtrl= ctrls[1];
 
         solrCtrl.setFacetGroup(scope);
-        scope.$watch(function(){ return solrCtrl.facet_fields;},
-                     function ( newVal, oldVal){
-                        if ( newVal !== oldVal ) {
-                         for (var k in facetGroupCtrl.getFacets()){
-                           console.log(k);
-                           facetGroupCtrl.setFacetResult(k, solrCtrl.facet_fields[k]);
-                         }
-                         console.log( "Solr has changed");
-                         console.log(newVal);
-                        }
-                     }
-                    );
+        scope.$watch(
+          function(){ return solrCtrl.facet_fields;},
+          function ( newVal, oldVal){
+            if ( newVal !== oldVal ) {
+              for (var k in facetGroupCtrl.getFacets()){
+                facetGroupCtrl.setFacetResult(k, solrCtrl.facet_fields[k]);
+              }
+            }
+          }
+        );
+
       }
     }
   })
 
-  .directive("solrSearch", function() {
+  .directive("solrSearch", function($location) {
     return {
       scope:{
-        //preload:"=",
-        //query:"="
       },
       restrict: "E",
       templateUrl:"app/view/solr_search.html",
       require: "^solr",
       link: function( scope, element, attrs, ctrl){
-        scope.search = ctrl.search;
+        scope.search = function(query, rows){
+          rows = rows || '10';
+          query = query|| '*';
+          $location.search('q',query);
+          $location.search('rows',rows);
+          ctrl.search(query, rows);
+        };
+
         scope.roptions= ["3", "10", "20", "30"];
-        //ctrl.roptions = scope.roptions;
         scope.rows="10";
         scope.preload=attrs.preload;
         scope.query=attrs.query;
-        console.log("Query =" + scope.query);
         if (scope.preload){
           scope.search(scope.query, scope.rows);
         }
@@ -93,7 +94,7 @@ var solr = angular.module("solr", [])
     }
   })
 
-  .directive("solrFacetResult", function() {
+  .directive("solrFacetResult", function($location) {
     return {
       restrict: "E",
       scope: {
@@ -103,6 +104,39 @@ var solr = angular.module("solr", [])
       },
       templateUrl:"app/view/solr_facet_result.html",
       link: function( scope, element, attrs, ctrl){
+        scope.facetString = function(){ 
+          return scope.field+':"'+scope.key+'"';
+        };
+        scope.getSelectedFacets = function(){
+          selected = $location.search().selected_facets;
+          selectedFacets =[];
+          if (angular.isArray(selected)) {
+            selectedFacets = selected;
+          } else {
+            if (selected){
+              selectedFacets.push(selected);
+            }
+          }
+          return selectedFacets;
+
+        };
+        scope.isSelected = function(){
+          selectedFacets = scope.getSelectedFacets();
+          facetString = scope.facetString();
+          for (i in selectedFacets){
+            if (selectedFacets[i]==facetString) return true;
+          }
+          return false;
+
+        };
+        scope.addFacet = function (){ 
+          if (!scope.isSelected()){
+            selectedFacets = scope.getSelectedFacets();
+            selectedFacets.push(scope.facetString());
+            $location.search('selected_facets', selectedFacets);
+          }
+        };
+
         scope.getLink = function (){ 
           return "https://encrypted.google.com/search?hl=en&q="+ scope.key;
         };
@@ -116,53 +150,75 @@ var solr = angular.module("solr", [])
         solrUrl: '=',
         docs: '=',
         preload: '=',
+        numFound: '=',
       },
       restrict: 'E',
-      controller: function($scope, $http, $timeout) {
+      controller: function($scope, $http, $timeout, $location) {
         var that = this;
         that.facet_fields={};
-        that.buildSearchUrl = function(query, rows){
-          //return 'https://repository.library.brown.edu/api/pub/search/'
-          if (!query){
-            query="*";
+        that.getQuery=function(){
+          return $location.search().q || "*";
+        }
+        that.getRows=function(){
+          return $location.search().rows || "10";
+        }
+
+        that.buildSearchParams = function(){
+          params = {
+            'q': that.getQuery(),
+            'facet': "on",
+            'facet.mincount':"1",
+            'json.nl': "map",
+            'rows': that.getRows()
+          };
+
+          selectedFacets=this.getSelectedFacets();
+          if (selectedFacets){
+            params["fq"]= selectedFacets;
           }
-          if (!rows){
-            rows="3";
+          if ($scope.facet_group){
+            params["facet.field"] = $scope.facet_group.listFields();
           }
-          return that.solrUrl
-          +'?q='+ query
-          +'&facet=on'
-          +'&facet.mincount=1'
-          +'&json.nl=map'
-          //+'&facet.field=object_type'
-          +'&'+ this.getFacetQueryParams()
-          +'&rows='+rows
-          +'&callback=JSON_CALLBACK';
+          return params;
         };
 
         that.search = function(query, rows){
-          console.log(that.buildSearchUrl(query, rows));
-          $http.jsonp(that.buildSearchUrl(query, rows), {cache:true})
+          $http.jsonp(that.solrUrl+"?callback=JSON_CALLBACK", {params: that.buildSearchParams(), cache:true})
             .success(function(data) {
               that.facet_fields = data.facet_counts.facet_fields;
               $scope.docs = data.response.docs;
+              $scope.numFound = data.response.numFound;
           });
         };
+
         $scope.search = that.search;
 
         this.setFacetGroup = function(newGroup){
           $scope.facet_group = newGroup;
         };
 
-        this.getFacetQueryParams = function(){
-          if ($scope.facet_group){
-            fields = $scope.facet_group.listFields();
-            field_string = fields.join("&facet.field=");
-            //return 'facet.field=object_type';
-            return 'facet.field='+ field_string;
+        this.getSelectedFacets = function(){
+          selected = $location.search().selected_facets;
+          selectedFacets =[];
+          if (angular.isArray(selected)) {
+            selectedFacets = selected;
+          } else {
+            if (selected){
+              selectedFacets.push(selected);
+            }
           }
-          //return "";
+          return selectedFacets;
+
         };
+
+        $scope.$watch(
+          function(){ return $location.search();},
+          function ( newVal, oldVal){
+            if ( newVal !== oldVal ) {
+              that.search()
+            }
+          }
+        );
       },
       require:"solr",
       link: function( scope, element, attrs, ctrl){
