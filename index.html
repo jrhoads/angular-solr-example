@@ -11,29 +11,23 @@
     <div ng-app="firstApp" ng-controller="MainCtrl">
       <div class="container">
         <h1>Playing With Solr Directives</h1>
-        <solr docs="docs" solr-url="'https://repository.library.brown.edu/api/search/'">
+        <solr docs="docs" num-found="numFound" solr-url="'https://repository.library.brown.edu/api/search/'">
           <div class="row">
             <div class="col-md-4">
               <solr-facet-group>
-                <solr-facet display="Object Type"   field="object_type"></solr-facet>
                 <solr-facet display="Resource Type" field="mods_type_of_resource"></solr-facet>
+                <solr-facet display="Object Type"   field="object_type"></solr-facet>
                 <solr-facet display="Keyword"       field="mods_subject_ssim"></solr-facet>
               </solr-facet-group>
             </div>
 
             <div class="col-md-8">
               <solr-search preload='true' query='{{params.q}}'></solr-search>
-              <h2>Results</h2>
+              <h2>Results (of {{numFound}})</h2>
               <ul>
                 <li ng-repeat="doc in docs">
-                  <hr/>
-                  <h5>
-                    <a ng-href="//repository.library.brown.edu/studio/item/{{doc.pid}}/">
-                      {{doc.primary_title}}
-                    </a>
-                  </h5>
+                  <result-document record=doc ></result-document>
                 </li>
-                <!--<li ng-repeat="doc in docs">{{doc | json}}</li>-->
               </ul>
             </div>
           </div>
