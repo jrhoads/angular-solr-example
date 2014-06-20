@@ -90,6 +90,11 @@ var solr = angular.module("solr", [])
       templateUrl:"app/view/solr_facet.html",
       link: function( scope, element, attrs, ctrl){
         ctrl.registerFacet(scope);
+
+        var es5getprops = Object.getOwnPropertyNames;
+        scope.isEmpty = function() {
+          return (es5getprops(scope.results).length === 0);
+        };
       }
     }
   })
@@ -102,6 +107,7 @@ var solr = angular.module("solr", [])
         count: "@",
         field:"@",
       },
+      require: "^solr",
       templateUrl:"app/view/solr_facet_result.html",
       link: function( scope, element, attrs, ctrl){
         scope.facetString = function(){ 
@@ -134,17 +140,14 @@ var solr = angular.module("solr", [])
             selectedFacets = scope.getSelectedFacets();
             selectedFacets.push(scope.facetString());
             $location.search('selected_facets', selectedFacets);
+            ctrl.search();
           }
-        };
-
-        scope.getLink = function (){ 
-          return "https://encrypted.google.com/search?hl=en&q="+ scope.key;
         };
       }
     }
   })
 
-  .directive("solr", function ($timeout) {
+  .directive("solr", function() {
     return {
       scope: {
         solrUrl: '=',
@@ -153,7 +156,7 @@ var solr = angular.module("solr", [])
         numFound: '=',
       },
       restrict: 'E',
-      controller: function($scope, $http, $timeout, $location) {
+      controller: function($scope, $http, $location) {
         var that = this;
         that.facet_fields={};
         that.getQuery=function(){
@@ -210,14 +213,14 @@ var solr = angular.module("solr", [])
           return selectedFacets;
 
         };
-
         $scope.$watch(
           function(){ return $location.search();},
           function ( newVal, oldVal){
             if ( newVal !== oldVal ) {
               that.search()
             }
-          }
+          },
+          true
         );
       },
       require:"solr",

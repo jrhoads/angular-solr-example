@@ -1,4 +1,4 @@
-var app = angular.module("firstApp", ["solr", "ngRoute"]);
+var app = angular.module("firstApp", ["solr"]);
 
 app.controller("MainCtrl", function($scope, $location){
   $scope.params= $location.search();

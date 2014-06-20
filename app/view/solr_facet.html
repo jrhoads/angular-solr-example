@@ -1,4 +1,4 @@
-<h3>{{display}}:</h3>
+<h3 ng-hide="isEmpty()">{{display}}:</h3>
 <ul>
   <li ng-repeat="(k, v)  in results">
     <solr-facet-result field="{{field}}" key="{{k}}" count="{{v}}" ></solr-facet-result>
