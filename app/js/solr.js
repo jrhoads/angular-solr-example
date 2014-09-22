@@ -171,6 +171,7 @@ var solr = angular.module("solr", [])
             'q': that.getQuery(),
             'facet': "on",
             'facet.mincount':"1",
+            'wt': 'json',
             'json.nl': "map",
             'rows': that.getRows()
           };
@@ -186,7 +187,7 @@ var solr = angular.module("solr", [])
         };
 
         that.search = function(query, rows){
-          $http.jsonp(that.solrUrl+"?callback=JSON_CALLBACK", {params: that.buildSearchParams(), cache:true})
+          $http.jsonp(that.solrUrl, {params: that.buildSearchParams(), cache:true})
             .success(function(data) {
               that.facet_fields = data.facet_counts.facet_fields;
               $scope.docs = data.response.docs;

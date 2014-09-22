@@ -10,7 +10,7 @@
     <div ng-app="firstApp" ng-controller="MainCtrl">
       <div class="container">
         <h1>Playing With Solr Directives</h1>
-        <solr docs="docs" num-found="numFound" solr-url="'https://repository.library.brown.edu/api/search/'">
+        <solr docs="docs" num-found="numFound" solr-url="'https://repository.library.brown.edu/api/search/?callback=JSON_CALLBACK'">
           <div class="row">
             <div class="col-md-4">
               <solr-facet-group>
@@ -23,7 +23,7 @@
 
             <div class="col-md-8">
               <solr-search preload='true' query='{{params.q}}'></solr-search>
-              <h2>Results (of {{numFound}})</h2>
+              <h2>Results ({{numFound}})</h2>
               <ul>
                 <li ng-repeat="doc in docs">
                   <result-document record=doc ></result-document>
