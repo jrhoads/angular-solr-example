@@ -1,7 +1,11 @@
-<hr/>
-<h5>
-  <a ng-href="//repository.library.brown.edu/studio/item/{{doc.pid}}/">
-    {{doc.primary_title}}
-  </a>
-</h5>
-<p>{{doc.object_type}}</p>
+<div class="panel panel-default">
+  <div class="panel-body">
+    <h5>
+      <a ng-href="//repository.library.brown.edu/studio/item/{{doc.pid}}/">
+        {{doc.primary_title}}
+      </a>
+    </h5>
+    <p>{{doc.object_type}}</p>
+    <p>{{doc.abstract.0}}</p>
+  </div>
+</div>

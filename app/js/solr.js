@@ -28,7 +28,7 @@ var solr = angular.module("solr", [])
       scope: {},
       controller: 'facetGroupController',
       transclude: true,
-      templateUrl:"app/view/solr_facet_list.html",
+      templateUrl:"app/view/solr_facet_group.html",
       require:["^solr", "solrFacetGroup"],
       link: function(scope, element, attrs, ctrls){
         var solrCtrl=ctrls[0];
@@ -47,6 +47,27 @@ var solr = angular.module("solr", [])
         );
 
       }
+    }
+  })
+  .directive("solrSelected", function(){
+    return {
+      restrict: "E",
+      scope:{},
+      controller: function($scope) {
+        $scope.selected = {
+          field: "mods_type_of_resource",
+          value: "notated music"
+        }
+      },
+      transclude: true,
+      templateUrl: "app/view/solr_selected.html",
+      require:"^solr",
+      link: function(scope, element, attrs, ctrl){
+        scope.selected = function(){
+          return ctrl.selected_facets_obj;
+        };
+      }
+
     }
   })
 
@@ -103,9 +124,10 @@ var solr = angular.module("solr", [])
     return {
       restrict: "E",
       scope: {
+        field:"@",
         key: "@",
         count: "@",
-        field:"@",
+        remove:"@",
       },
       require: "^solr",
       templateUrl:"app/view/solr_facet_result.html",
@@ -113,21 +135,9 @@ var solr = angular.module("solr", [])
         scope.facetString = function(){ 
           return scope.field+':"'+scope.key+'"';
         };
-        scope.getSelectedFacets = function(){
-          selected = $location.search().selected_facets;
-          selectedFacets =[];
-          if (angular.isArray(selected)) {
-            selectedFacets = selected;
-          } else {
-            if (selected){
-              selectedFacets.push(selected);
-            }
-          }
-          return selectedFacets;
 
-        };
         scope.isSelected = function(){
-          selectedFacets = scope.getSelectedFacets();
+          selectedFacets = ctrl.selected_facets;
           facetString = scope.facetString();
           for (i in selectedFacets){
             if (selectedFacets[i]==facetString) return true;
@@ -135,13 +145,21 @@ var solr = angular.module("solr", [])
           return false;
 
         };
+
         scope.addFacet = function (){ 
           if (!scope.isSelected()){
-            selectedFacets = scope.getSelectedFacets();
+            selectedFacets = ctrl.selected_facets;
             selectedFacets.push(scope.facetString());
             $location.search('selected_facets', selectedFacets);
             ctrl.search();
           }
+        };
+
+        scope.removeFacet = function (){ 
+          selectedFacets = ctrl.selected_facets;
+          selectedFacets.pop(scope.facetString());
+          $location.search('selected_facets', selectedFacets);
+          ctrl.search();
         };
       }
     }
@@ -159,6 +177,7 @@ var solr = angular.module("solr", [])
       controller: function($scope, $http, $location) {
         var that = this;
         that.facet_fields={};
+        that.selected_facets=[];
         that.getQuery=function(){
           return $location.search().q || "*";
         }
@@ -176,7 +195,7 @@ var solr = angular.module("solr", [])
             'rows': that.getRows()
           };
 
-          selectedFacets=this.getSelectedFacets();
+          selectedFacets=this.selected_facets;
           if (selectedFacets){
             params["fq"]= selectedFacets;
           }
@@ -187,11 +206,14 @@ var solr = angular.module("solr", [])
         };
 
         that.search = function(query, rows){
+          console.log("RUNNING SEARCH");
           $http.jsonp(that.solrUrl, {params: that.buildSearchParams(), cache:true})
             .success(function(data) {
               that.facet_fields = data.facet_counts.facet_fields;
               $scope.docs = data.response.docs;
               $scope.numFound = data.response.numFound;
+              that.selected_facets = that.getSelectedFacets();
+              that.selected_facets_obj = that.getSelectedFacetsObjects();
           });
         };
 
@@ -201,7 +223,21 @@ var solr = angular.module("solr", [])
           $scope.facet_group = newGroup;
         };
 
+        this.getSelectedFacetsObjects = function(){
+          var retValue = [];
+          this.selected_facets.forEach( function(value, key){
+            split_val = value.split(":");
+            retValue.push({
+              field: split_val[0],
+              value: split_val[1].replace(/"/g, "")
+
+            });
+          });
+          return retValue;
+        };
+
         this.getSelectedFacets = function(){
+          console.log("GET_SELECTED_FACETS");
           selected = $location.search().selected_facets;
           selectedFacets =[];
           if (angular.isArray(selected)) {
@@ -214,6 +250,10 @@ var solr = angular.module("solr", [])
           return selectedFacets;
 
         };
+
+        this.selected_facets = this.getSelectedFacets();
+        this.selected_facets_obj = this.getSelectedFacetsObjects();
+
         $scope.$watch(
           function(){ return $location.search();},
           function ( newVal, oldVal){

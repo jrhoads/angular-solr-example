@@ -1,0 +1,6 @@
+<div ng-transclude=''></div>
+<ul>
+  <li ng-repeat="facet in selected()">
+    <solr-facet-result field={{facet.field}} key={{facet.value}} count="x" remove="true"></solr-facet-result>
+  </li>
+</ul>

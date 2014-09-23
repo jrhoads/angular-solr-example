@@ -14,7 +14,8 @@
           <div class="row">
             <div class="col-md-4">
               <solr-facet-group>
-                <h1>Facet List:</h1>
+                <solr-selected><h2>Selected:</h2></solr-selected>
+                <h2>Facet List:</h2>
                 <solr-facet display="Resource Type" field="mods_type_of_resource"></solr-facet>
                 <solr-facet display="Object Type"   field="object_type"></solr-facet>
                 <solr-facet display="Keyword"       field="mods_subject_ssim"></solr-facet>
@@ -24,7 +25,7 @@
             <div class="col-md-8">
               <solr-search preload='true' query='{{params.q}}'></solr-search>
               <h2>Results ({{numFound}})</h2>
-              <ul>
+              <ul class="list-unstyled">
                 <li ng-repeat="doc in docs">
                   <result-document record=doc ></result-document>
                 </li>
