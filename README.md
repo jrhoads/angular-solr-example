@@ -133,6 +133,7 @@ Could use cleaning and refactoring.
 - solr-facet-list needs to be declared before solr-search if
   preload=true.  Otherwise the facets are not registered for initial
 display.
+- Initial facets registration workaround with hitting "search" button automatically on page load - implemented. http://stackoverflow.com/questions/26494948/automatically-click-button-after-page-load-in-angularjs
 
 
 
